@@ -62,3 +62,38 @@ For detailed documentation, visit [docs.dokploy.com](https://docs.dokploy.com).
 ## 🤝 Contributing
 
 Check out the [Contributing Guide](CONTRIBUTING.md) for more information.
+
+## Azure test deployment
+
+Pushes to `iva-k/dokploy` on `canary` run `.github/workflows/azure-deploy.yml`.
+The workflow builds the root Dockerfile, pushes an image tagged with the commit
+SHA to Azure Container Registry, and updates the VM service by image digest.
+It checks the service image and the Dokploy health endpoint before success.
+
+- Test address: http://135.225.72.84:3000
+- Resource group: `rg-dokploy-test`, region: `swedencentral`.
+- VM: `vm-dokploy-test`, Ubuntu 24.04, `Standard_B2ls_v2`, 64 GB disk.
+- Registry: `ivakdokploytest.azurecr.io`, Basic tier.
+- Deployment branch: `canary`. Other branches do not deploy.
+- Access: TCP 22, 80, 443, and 3000 from `178.237.219.140/32` only.
+- GitHub uses OIDC through `id-dokploy-github`; no Azure password is stored.
+- The VM identity has `AcrPull`; the GitHub identity has `AcrPush` on this
+  registry and `Virtual Machine Contributor` on this VM.
+- GitHub variables: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
+- PostgreSQL data and Dokploy settings persist on the VM disk. No scheduled
+  backup is configured for this test instance.
+
+Use GitHub Actions **Deploy Dokploy to Azure** to inspect or rerun deployments.
+Concurrent deployment runs are serialized. Docker rolls back failed service
+updates. Database migrations are not reversed by an image rollback.
+To redeploy an earlier source revision, revert the change and push to `canary`.
+Do not use the panel's upstream update action to deploy this fork.
+
+If your public IP changes, update the `AllowTestClient` rule in
+`nsg-dokploy-test`. For encrypted panel access during testing, run
+`ssh -L 3000:localhost:3000 azureuser@135.225.72.84` and open
+http://localhost:3000. Create the initial admin account through that tunnel.
+The public IP endpoint uses HTTP; no domain or TLS certificate is configured.
+
+The VM, disk, public IP, and registry incur Azure charges. Remove the resource
+group when the test is no longer required; removal also deletes its stored data.

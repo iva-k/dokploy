@@ -1,0 +1,56 @@
+name: Deploy Dokploy to Azure
+
+on:
+  push:
+    branches: [canary]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: dokploy-azure-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'iva-k/dokploy' && github.ref == 'refs/heads/canary'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Prepare build
+        run: |
+          cp apps/dokploy/.env.production.example .env.production
+          cp apps/dokploy/.env.production.example apps/dokploy/.env.production
+          az acr login --name ivakdokploytest
+      - uses: docker/setup-buildx-action@v4
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ivakdokploytest.azurecr.io/dokploy:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Deploy and check health
+        env:
+          IMAGE: ivakdokploytest.azurecr.io/dokploy@${{ steps.build.outputs.digest }}
+        run: |
+          printf 'image=%q\n' "$IMAGE" > /tmp/deploy.sh
+          cat scripts/azure-deploy.sh >> /tmp/deploy.sh
+          az vm run-command invoke \
+            --resource-group rg-dokploy-test --name vm-dokploy-test \
+            --command-id RunShellScript --scripts @/tmp/deploy.sh > /tmp/result.json
+          jq -r '.value[].message' /tmp/result.json | tee /tmp/result.txt
+          grep -Fx "DEPLOYED=$IMAGE" /tmp/result.txt
