@@ -97,3 +97,8 @@ The public IP endpoint uses HTTP; no domain or TLS certificate is configured.
 
 The VM, disk, public IP, and registry incur Azure charges. Remove the resource
 group when the test is no longer required; removal also deletes its stored data.
+
+Run `bash scripts/test-azure-deploy.sh` to check deployment success and failure
+handling with command stubs. The Azure workflow runs this check before building.
+Live verification also requires a successful workflow run and a healthy service
+using that run's image digest.
