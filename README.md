@@ -100,6 +100,8 @@ group when the test is no longer required; removal also deletes its stored data.
 
 ## Hosted platform design
 
+The [hosted platform reuse audit](docs/architecture/hosted-platform-reuse-audit.md) maps these features to existing code, third-party components, and source/test references.
+
 The [public hosted platform plan](docs/architecture/hosted-platform-plan.md)
 defines the proposed tenant, usage, billing, and managed PostgreSQL behavior.
 It includes Vercel and Neon references, an Azure cost comparison gate, and

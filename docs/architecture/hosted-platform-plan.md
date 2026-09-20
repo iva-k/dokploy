@@ -1,5 +1,7 @@
 # Public hosted platform: architecture and delivery plan
 
+Reuse audit, 2026-09-20: [capability map and implementation references](hosted-platform-reuse-audit.md). Licensing review is deferred to the product launch decision or funding review under the user's later instruction; technical reuse selection can proceed. The existing feature descriptions below are retained.
+
 Research date: 2026-09-19. Implementation reference: Beads epic `DOK-9q8` (phases A-H); later design reference: `DOK-0xv` (phase I).
 
 This document specifies proposed behavior. It does not report implementation or release readiness. Beads stores assignments, dependencies, work notes, and completion. Start implementation with `bd prime`, `bd ready`, and `bd show <id>`.
@@ -60,6 +62,8 @@ License boundary: `LICENSE.MD` separates Apache-2.0 content from `/proprietary` 
 
 ## 4. Architecture
 
+Reuse guidance: [tenancy and control plane](reuse/tenancy-and-control-plane.md) and [VM, build and network components](reuse/database-and-infrastructure.md#d5).
+
 ```mermaid
 flowchart TD
     U[Customer dashboard and API] --> C[Dokploy control plane]
@@ -111,6 +115,8 @@ VM isolation has a minimum infrastructure cost even when an application is idle.
 
 ## 5. Managed PostgreSQL
 
+Reuse guidance: [database image, pooling, recovery, external connections and preview copies](reuse/database-and-infrastructure.md).
+
 ### 5.1 Backend selection
 
 | Option | Fit | Decision |
@@ -160,6 +166,8 @@ Automatic suspend/resume, online autoscaling, replicas, and higher availability 
 
 ## 6. Usage records and prices
 
+Reuse guidance: [meter collection, ledger/reconciliation and exact rating](reuse/usage-and-billing.md#b2).
+
 ### 6.1 Initial billable units
 
 | Meter | Definition and collection | Customer rule |
@@ -208,6 +216,8 @@ Keep usage collection, rated estimates, quota decisions, and payment state separ
 
 ## 7. Billing, entitlements, and spending controls
 
+Reuse guidance: [existing billing paths, provider lifecycle and budgets](reuse/usage-and-billing.md#b1).
+
 ### 7.1 Ownership and provider choice
 
 Add one `billing_account` per organization and one Stripe customer per billing account for the first release. Keep subscriptions, billing periods, price versions, usage allowances, and resource entitlements separate from user identity. Do not add a credit wallet or resale marketplace.
@@ -248,6 +258,8 @@ Enforce the compute/build part with short allocation leases and reserved maximum
 At a budget stop, cancel queued builds, prevent new allocations, and stop serving and compute through durable operations. Preserve database volumes and recovery history. Show the continuing storage estimate. Never call this a strict cap on the entire invoice unless fixed charges and retention have also been reserved. Resume only after the restriction is resolved, and reconcile resource state before restarting.
 
 ## 8. Database cost gate
+
+Reuse guidance: [equal-workload cost fixtures and provider comparison](reuse/database-and-infrastructure.md#d8).
 
 An embedded database provider is permitted only when its total direct cost is no greater than our operated option for the approved workload envelope at comparable performance, durability, recovery, and support. Operations labor is a separate line; do not use an assumed labor saving to claim direct infrastructure cost parity.
 
@@ -292,6 +304,8 @@ Do not set our selling prices by copying Vercel or Neon rates. Produce a price s
 
 ## 9. Data and service boundaries
 
+Reuse guidance: [tenant authorization](reuse/tenancy-and-control-plane.md#t2), [transactional jobs](reuse/tenancy-and-control-plane.md#t3), and [usage records](reuse/usage-and-billing.md#b3).
+
 Extend the existing Drizzle schema. The following names are proposed additions, not existing tables.
 
 | Record | Responsibility and constraints |
@@ -332,11 +346,15 @@ These phases specify deliverables and acceptance gates. Beads is the execution r
 
 ### A. Set the service and cost contract
 
+Reuse guidance: [component decisions and implementation handoff](hosted-platform-reuse-audit.md#implementation-handoff), [database cost fixtures](reuse/database-and-infrastructure.md#d8), and [billing-provider fit](reuse/usage-and-billing.md#b5). Per the user's 2026-09-20 instruction, licensing review is deferred to the product launch decision or funding review; it is not a prerequisite for the current technical selection.
+
 Produce the workload/cost comparison, price-unit catalog, production region, currency, licensing composition, billing-provider choice, and permitted database backend. Confirm public signup, trial, suspension, retention, and recovery terms. Use this document, `LICENSE.MD`, `LICENSE_PROPRIETARY.md`, existing deployment configuration, and current vendor documentation.
 
 Acceptance: both backend options use equal workload and service assumptions; a provider is selected only if the user's cost rule passes. A priced single-region service definition and license decision exist. Record decisions in a durable ADR; keep unresolved work in Beads. This phase does not require buying infrastructure.
 
 ### B. Enforce organization ownership
+
+Reuse guidance: [T1-T2 identity, roles and ownership](reuse/tenancy-and-control-plane.md#t1) and [T8 contract/migration tests](reuse/tenancy-and-control-plane.md#t8).
 
 Modify `packages/server/src/db/schema/account.ts`, `project.ts`, `environment.ts`, `user.ts`, `packages/server/src/lib/auth.ts`, `services/permission.ts`, `apps/dokploy/server/api/trpc.ts`, organization/resource routers, `apps/dokploy/server/wss/authorize.ts`, and `apps/dokploy/drizzle/` migrations. Create the new tenant-scoped records only when their owning phase needs them.
 
@@ -346,6 +364,8 @@ Acceptance: two organizations, a user in both, and every role produce the correc
 
 ### C. Provision isolated hosted resources
 
+Reuse guidance: [T3 durable jobs](reuse/tenancy-and-control-plane.md#t3), [T5 domain/TLS](reuse/tenancy-and-control-plane.md#t5), [T7 admission](reuse/tenancy-and-control-plane.md#t7), and [D5-D7 VM/build/network reuse](reuse/database-and-infrastructure.md#d5).
+
 Modify `packages/server/src/db/schema/server.ts`, existing remote server/deployment utilities, `services/network.ts`, `apps/dokploy/server/api/routers/server.ts`, `application.ts`, `apps/dokploy/server/queues/queue-types.ts`, and deployment queue integration. Add `packages/server/src/services/resource-operation.ts`, `resource-allocation.ts`, corresponding schema modules, and `apps/dokploy/server/queues/resource-operations.ts`.
 
 Test targets: `apps/dokploy/__test__/platform/resource-operations.test.ts`, `hosted-policy.test.ts`, and Linux infrastructure isolation tests. Add hosted infrastructure definitions under `infra/hosted/` for the selected cloud; reuse its official provisioning tools.
@@ -353,6 +373,8 @@ Test targets: `apps/dokploy/__test__/platform/resource-operations.test.ts`, `hos
 Acceptance: duplicate create, timeout, restart, canceled create, resize, and destroy converge to one correct allocation. Reconciliation finds orphan resources. A customer workload cannot reach another tenant, cloud metadata, platform secrets, or host administration. Builds have duration and disk limits. Quota reservation works under concurrent requests.
 
 ### D. Record usage without charging
+
+Reuse guidance: [B2-B4 collection, replay, reconciliation and exact quantities](reuse/usage-and-billing.md#b2).
 
 Add `packages/server/src/db/schema/usage.ts`, `services/usage.ts`, and `apps/dokploy/server/queues/usage-reconciliation.ts`. Extend the Go worker under `apps/monitoring/` with a separate billable collector/spool path. Instrument lifecycle, builder, storage, and gateway/egress boundaries. Register exports in schema and service entry points.
 
@@ -362,6 +384,8 @@ Acceptance: deterministic totals after duplicate delivery, crash/replay, missed 
 
 ### E. Deliver managed PostgreSQL and recovery
 
+Reuse guidance: [D1-D4 database runtime, pool, backups and external/provider connections](reuse/database-and-infrastructure.md#d1) and [T4 secrets](reuse/tenancy-and-control-plane.md#t4).
+
 Extend `packages/server/src/db/schema/postgres.ts`, `services/postgres.ts`, `utils/databases/postgres.ts`, backup/restore utilities, `apps/dokploy/server/api/routers/postgres.ts`, and the PostgreSQL dashboard page/components. Add `services/managed-database.ts`, `db/schema/managed-database.ts`, `apps/dokploy/server/api/routers/managed-database.ts`, and tested PostgreSQL/PgBouncer/pgBackRest configuration under `infra/hosted/postgres/` for the operated option. If Phase A selects a provider, implement that adapter instead and preserve the same tested customer contract.
 
 Test targets: `apps/dokploy/__test__/databases/managed-postgres.test.ts`, `connections.test.ts`, `restore.real.test.ts`, and existing backup/restore tests.
@@ -369,6 +393,8 @@ Test targets: `apps/dokploy/__test__/databases/managed-postgres.test.ts`, `conne
 Acceptance: signup-to-app-to-database works; pooled and direct URLs work; non-superuser and network restrictions hold; two tenants cannot cross-connect or restore each other's backups. Run create/resize/rotation/delete recovery tests and restore within the specified objectives after host loss. Test full disk, exhausted connections, failed backup, invalid restore time, interrupted resize, and external database use.
 
 ### F. Add organization billing and entitlement enforcement
+
+Reuse guidance: [B1 existing billing](reuse/usage-and-billing.md#b1), [B5 provider events](reuse/usage-and-billing.md#b5), and [B6 entitlements](reuse/usage-and-billing.md#b6).
 
 Modify `apps/dokploy/server/utils/billing.ts`, `stripe.ts`, `server/api/utils/plan-limits.ts`, `server/api/routers/stripe.ts`, and `pages/api/stripe/webhook.ts`. Add `packages/server/src/db/schema/billing.ts`, billing delivery/inbox services, and durable billing workers. Implement the Phase A provider choice only.
 
@@ -378,6 +404,8 @@ Acceptance: test-mode invoices match closed usage and allowances; same-owner org
 
 ### G. Add customer usage, budgets, and public onboarding
 
+Reuse guidance: [T6 public signup](reuse/tenancy-and-control-plane.md#t6), [T8 UI reuse](reuse/tenancy-and-control-plane.md#t8), and [B6-B7 budgets and usage screens](reuse/usage-and-billing.md#b6).
+
 Extend existing organization, onboarding, billing, and invoice UI. Add `apps/dokploy/pages/dashboard/usage.tsx`, usage/budget routers, and focused components under `components/dashboard/usage/`. Register routers in `apps/dokploy/server/api/root.ts`. Reuse existing notifications and secret controls.
 
 Test targets: `apps/dokploy/__test__/billing/budgets.test.ts`, `onboarding.test.ts`, and browser flows for signup, project/database creation, connection injection, usage filtering, spend stop, invoice, cancellation, and export.
@@ -386,17 +414,23 @@ Acceptance: costs match authorized scope; estimates show freshness and units; bi
 
 ### H. Migrate and pass the public-release gates
 
+Reuse guidance: [T8 migration/test fixtures](reuse/tenancy-and-control-plane.md#t8), [B8 billing evidence](reuse/usage-and-billing.md#b8), and [additional upstream test ports](hosted-platform-reuse-audit.md#whole-platform-alternatives-and-additional-test-ports).
+
 Add expand/backfill/validate/contract migrations under `apps/dokploy/drizzle/`, migration fixtures under `apps/dokploy/__test__/platform/`, production release checks under `scripts/`, and suitable CI jobs under `.github/workflows/`. Update `README.md`, `CONTRIBUTING.md`, and operator documentation with the tested behavior.
 
 Acceptance: a migration rehearsal preserves users, memberships, resources, secrets, and legacy billing. Complete at least one simulated billing period and 14 days of internal live shadow measurement with no unexplained invoice differences. Pass isolation review, restore drills, capacity and abuse tests, credential rotation, control-plane recovery, and billing support procedures. Internal testing is followed by public self-service release; an invited-customer release is not required.
 
 ### I. Add later Vercel/Neon-style capabilities
 
+Reuse guidance: [D9 CDN/function runtimes](reuse/database-and-infrastructure.md#d9) and [D10 preview copy tools](reuse/database-and-infrastructure.md#d10).
+
 After the first release, evaluate CDN integration and request accounting, additional regions, a sandboxed function runtime, and database preview copies. Define function CPU, memory, invocation, and transfer meters before function billing. A CDN does not supply edge execution. A regional container scheduler does not supply a global edge runtime.
 
 Place database-dependent compute near the database; use geographically distributed execution for suitable workloads. Reuse an established CDN or function runtime if its feature, isolation, and cost tests pass. Do not build a global network or database storage engine as part of the first paid release. References: [Vercel CDN](https://vercel.com/docs/cdn), [function regions](https://vercel.com/docs/functions/configuring-functions/region), [Edge runtime](https://vercel.com/docs/functions/runtimes/edge), [Neon compute](https://neon.com/docs/manage/endpoints/).
 
 ## 11. Migration and release rules
+
+Reuse guidance: [implementation handoff and evidence boundaries](hosted-platform-reuse-audit.md#implementation-handoff).
 
 1. Inventory ownership and billing links before backfill. Preserve existing IDs. Stop migration on ambiguous ownership instead of choosing an organization automatically.
 2. Add new fields and tables without changing live reads. Mark old subscriptions as legacy. A user can own several organizations; do not copy that user's Stripe subscription to every organization.
