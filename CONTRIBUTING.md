@@ -7,11 +7,26 @@ Before you start, please first discuss the feature/bug you want to add with the 
 We have a few guidelines to follow when contributing to this project:
 
 - [Commit Convention](#commit-convention)
+- [Task management](#task-management)
 - [Setup](#setup)
 - [Development](#development)
 - [Build](#build)
 - [Pull Request](#pull-request)
 - [Important Considerations](#important-considerations-for-pull-requests)
+
+## Task management
+
+Use Beads (`bd`) for mutable task state and operational handoff:
+
+```bash
+bd prime
+bd ready
+bd update <id> --claim
+```
+
+Use `bd create` for discovered work and `bd close` after acceptance criteria and validation pass. Keep requirements, decisions, architecture, and release criteria in their durable documents. Do not use Markdown TODO lists or status ledgers for mutable work. The pull request and release checklists are process and validation gates.
+
+This checkout uses local embedded Dolt with no configured Beads remote. Do not commit, push, or synchronize Beads data without explicit authorization.
 
 ## Commit Convention
 

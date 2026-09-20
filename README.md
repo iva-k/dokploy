@@ -98,6 +98,29 @@ The public IP endpoint uses HTTP; no domain or TLS certificate is configured.
 The VM, disk, public IP, and registry incur Azure charges. Remove the resource
 group when the test is no longer required; removal also deletes its stored data.
 
+## Hosted platform design
+
+The [public hosted platform plan](docs/architecture/hosted-platform-plan.md)
+defines the proposed tenant, usage, billing, and managed PostgreSQL behavior.
+It includes Vercel and Neon references, an Azure cost comparison gate, and
+public-release criteria. The document is a design proposal. Beads stores its
+implementation tasks and dependencies.
+
+## Task management
+
+This repository uses [Beads](https://github.com/gastownhall/beads) for mutable task state.
+Install the `bd` command on the workstation before contributing, then run:
+
+```bash
+bd prime
+bd ready
+bd update <id> --claim
+```
+
+Create discovered work with `bd create` and close it with `bd close` after its acceptance criteria and validation pass. Keep requirements, decisions, architecture, and release criteria in durable documents. Do not use Markdown TODO lists or status ledgers for mutable work.
+
+This checkout uses local embedded Dolt with no configured Beads remote. Do not run remote synchronization unless a remote is explicitly configured and authorized. The pull request and automated release checklists remain process and validation gates, not task storage.
+
 Run `bash scripts/test-azure-deploy.sh` to check deployment success and failure
 handling with command stubs. The Azure workflow runs this check before building.
 Live verification also requires a successful workflow run and a healthy service
