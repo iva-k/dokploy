@@ -108,6 +108,10 @@ It includes Vercel and Neon references, an Azure cost comparison gate, and
 public-release criteria. The document is a design proposal. Beads stores its
 implementation tasks and dependencies.
 
+The [implementation-agent prompt](docs/architecture/hosted-platform-implementation-prompt.md)
+defines the Beads task loop, shared interfaces, validation, and evidence required
+to implement the plan.
+
 ## Task management
 
 This repository uses [Beads](https://github.com/gastownhall/beads) for mutable task state.

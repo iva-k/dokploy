@@ -1,5 +1,7 @@
 # Public hosted platform: architecture and delivery plan
 
+Implementation instructions: [agent prompt and Beads execution contract](hosted-platform-implementation-prompt.md). Beads contains 46 first-release tasks under phases A-H and four later design tasks under phase I. Read live task state and dependencies before work.
+
 Reuse audit, 2026-09-20: [capability map and implementation references](hosted-platform-reuse-audit.md). Licensing review is deferred to the product launch decision or funding review under the user's later instruction; technical reuse selection can proceed. The existing feature descriptions below are retained.
 
 Research date: 2026-09-19. Implementation reference: Beads epic `DOK-9q8` (phases A-H); later design reference: `DOK-0xv` (phase I).

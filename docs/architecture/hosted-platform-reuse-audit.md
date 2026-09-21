@@ -115,6 +115,8 @@ Additional TypeScript examples from CapRover `43f9980`:
 
 ## Implementation handoff
 
+Use the [implementation-agent prompt](hosted-platform-implementation-prompt.md) with the detailed Beads tasks. Each task includes scope, interfaces, implementation details, completion criteria, verification and source references. Beads remains the only task-status authority.
+
 Follow the original phase dependencies. Add these reuse checks to each phase's existing acceptance work; do not start all candidate integrations together.
 
 | Phase | Reuse decision or implementation boundary | Evidence required before its existing gate can pass |
